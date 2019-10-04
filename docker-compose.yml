@@ -1,0 +1,353 @@
+version: "3.7"
+
+x-common:
+  &default-common
+  restart: always
+  env_file: ./.env
+  dns:
+    - ${DNS:-180.76.76.76}
+
+services:
+
+### nginx #################################################    
+  nginx:
+    << : *default-common
+    image: nginx:${NGINX_VERSION}
+    ports:
+      - "${NGINX_HTTP_HOST_PORT}:80"
+      - "${NGINX_HTTPS_HOST_PORT}:443"
+    privileged: true
+    volumes:
+      - ${GLOBAL_WEB_PATH}:/var/www/html/:rw
+      - ${NGINX_CONF_DIR}:/etc/nginx/conf.d/:rw
+      - ${NGINX_CONF_FILE}:/etc/nginx/nginx.conf:ro
+      - ${NGINX_LOG_DIR}:/var/log/nginx/:rw
+    restart: always
+    environment:
+      TZ: ${GLOBAL_TIME_ZONE}
+    networks:
+      - default
+    container_name: nginx
+
+
+### php73 #################################################        
+  php73:
+    build:
+      context: ./build/php/
+      args:
+        PHP_VERSION: ${PHP73_VERSION}
+        ALPINE_REPOSITORIES: ${ALPINE_REPOSITORIES}
+        PHP_EXTENSIONS: ${PHP73_EXTENSIONS}
+        MORE_EXTENSION_INSTALLER: php73.sh
+        # XDEBUG_EXT_VERSION: ${XDEBUG_PHP7_EXT_VERSION}
+        SWOOLE_EXT_VERSION: ${SWOOLE_PHP7_EXT_VERSION}
+        GRPC_EXT_VERSION: ${GRPC_EXT_VERSION}
+        REDIS_EXT_VERSION: ${REDIS_EXT_VERSION}
+        LIBRDKAFKA_VERSION: ${LIBRDKAFKA_VERSION}
+        RDKAFKA_EXT_VERSION: ${RDKAFKA_EXT_VERSION}
+        ZOOKEEPER_VERSION: ${ZOOKEEPER_VERSION}
+        ZOOKEEPER_EXT_VERSION: ${ZOOKEEPER_EXT_VERSION}
+        PROTOBUF_VERSION: ${PROTOBUF_VERSION}
+        PHP_XHPROF_EXT: ${PHP_XHPROF_EXT}
+        SEASLOG_EXT_VERSION: ${SEASLOG_EXT_VERSION}
+        MONGODB_EXT_VERSION: ${MONGODB_EXT_VERSION}
+    volumes:
+      - ${GLOBAL_WEB_PATH}:/var/www/html/:rw
+      - ${PHP73_PHP_CONF_FILE}:/usr/local/etc/php/php.ini:ro
+      - ${PHP73_FPM_CONF_FILE}:/usr/local/etc/php-fpm.d/www.conf:rw
+      - ${PHP73_LOG_DIR}:/var/log/php/:rw
+    restart: always
+    cap_add:
+      - SYS_PTRACE
+    networks:
+      - default
+    container_name: php73
+
+
+### php72 #################################################      
+  php72:
+    build:
+      context: ./build/php-debian/
+      args:
+        SOURCE_LIST: buster
+        PHP_VERSION: ${PHP72_VERSION}
+        PHP_EXTENSIONS: ${PHP72_EXTENSIONS}
+        MORE_EXTENSION_INSTALLER: php72-debian.sh
+        LIBWEBP_VERSION: ${LIBWEBP_VERSION}
+        # XDEBUG_EXT_VERSION: ${XDEBUG_PHP7_EXT_VERSION}
+        SWOOLE_EXT_VERSION: ${SWOOLE_PHP7_EXT_VERSION}
+        GRPC_EXT_VERSION: ${GRPC_EXT_VERSION}
+        REDIS_EXT_VERSION: ${REDIS_EXT_VERSION}
+        LIBRDKAFKA_VERSION: ${LIBRDKAFKA_VERSION}
+        RDKAFKA_EXT_VERSION: ${RDKAFKA_EXT_VERSION}
+        ZOOKEEPER_VERSION: ${ZOOKEEPER_VERSION}
+        ZOOKEEPER_EXT_VERSION: ${ZOOKEEPER_EXT_VERSION}
+        PROTOBUF_VERSION: ${PROTOBUF_VERSION}
+        PHP_XHPROF_EXT: ${PHP_XHPROF_EXT}
+        SEASLOG_EXT_VERSION: ${SEASLOG_EXT_VERSION}
+        MONGODB_EXT_VERSION: ${MONGODB_EXT_VERSION}
+    volumes:
+      - ${GLOBAL_WEB_PATH}:/var/www/html/:rw
+      - ${PHP72_PHP_CONF_FILE}:/usr/local/etc/php/php.ini:ro
+      - ${PHP72_FPM_CONF_FILE}:/usr/local/etc/php-fpm.d/www.conf:rw
+      - ${PHP72_LOG_DIR}:/var/log/php/:rw
+    restart: always
+    cap_add:
+      - SYS_PTRACE
+    networks:
+      - default
+    container_name: php72
+
+### php71 #################################################  
+  php71:
+    build:
+      context: ./build/php/
+      args:
+        PHP_VERSION: ${PHP71_VERSION}
+        ALPINE_REPOSITORIES: ${ALPINE_REPOSITORIES}
+        PHP_EXTENSIONS: ${PHP71_EXTENSIONS}
+        MORE_EXTENSION_INSTALLER: php71.sh
+        # XDEBUG_EXT_VERSION: ${XDEBUG_PHP7_EXT_VERSION}
+        SWOOLE_EXT_VERSION: ${SWOOLE_PHP7_EXT_VERSION}
+        GRPC_EXT_VERSION: ${GRPC_EXT_VERSION}
+        REDIS_EXT_VERSION: ${REDIS_EXT_VERSION}
+        LIBRDKAFKA_VERSION: ${LIBRDKAFKA_VERSION}
+        RDKAFKA_EXT_VERSION: ${RDKAFKA_EXT_VERSION}
+        ZOOKEEPER_VERSION: ${ZOOKEEPER_VERSION}
+        ZOOKEEPER_EXT_VERSION: ${ZOOKEEPER_EXT_VERSION}
+        PROTOBUF_VERSION: ${PROTOBUF_VERSION}
+        PHP_XHPROF_EXT: ${PHP_XHPROF_EXT}
+        SEASLOG_EXT_VERSION: ${SEASLOG_EXT_VERSION}
+        MONGODB_EXT_VERSION: ${MONGODB_EXT_VERSION}
+    volumes:
+      - ${GLOBAL_WEB_PATH}:/var/www/html/:rw
+      - ${PHP71_PHP_CONF_FILE}:/usr/local/etc/php/php.ini:ro
+      - ${PHP71_FPM_CONF_FILE}:/usr/local/etc/php-fpm.d/www.conf:rw
+      - ${PHP71_LOG_DIR}:/var/log/php/:rw
+    restart: always
+    cap_add:
+      - SYS_PTRACE
+    networks:
+      - default
+    container_name: php71
+
+### php56 #################################################  
+  php56:
+    build:
+      context: ./build/php/
+      args:
+        PHP_VERSION: ${PHP56_VERSION}
+        ALPINE_REPOSITORIES: ${ALPINE_REPOSITORIES}
+        PHP_EXTENSIONS: ${PHP56_EXTENSIONS}
+        MORE_EXTENSION_INSTALLER: php56.sh
+        XDEBUG_EXT_VERSION: ${XDEBUG_PHP5_EXT_VERSION}
+        SWOOLE_EXT_VERSION: ${SWOOLE_PHP5_EXT_VERSION}
+        GRPC_EXT_VERSION: ${GRPC_EXT_VERSION}
+        REDIS_EXT_VERSION: ${REDIS_EXT_VERSION}
+        LIBRDKAFKA_VERSION: ${LIBRDKAFKA_VERSION}
+        MONGODB_EXT_VERSION: ${MONGODB_EXT_VERSION}
+        SEASLOG_EXT_VERSION: ${SEASLOG_EXT_VERSION}
+    volumes:
+      - ${GLOBAL_WEB_PATH}:/var/www/html/:rw
+      - ${PHP56_PHP_CONF_FILE}:/usr/local/etc/php/php.ini:ro
+      - ${PHP56_FPM_CONF_FILE}:/usr/local/etc/php-fpm.d/www.conf:rw
+      - ${PHP56_LOG_DIR}:/var/log/php
+    restart: always
+    cap_add:
+      - SYS_PTRACE
+    networks:
+      - default
+    container_name: php56
+
+
+### mongo #################################################  
+  # mongo:
+  #   image: mongo:4.1.13
+  #   # build:
+  #   #   context: ./build/mongo/
+  #   #   args:
+  #   #     SOURCE_LIST: bionic
+  #   ports:
+  #     - "${MONGO_HOST_PORT}:27017"
+  #   volumes:
+  #     - ${MONGO_DATA_DB_DIR}:/data/db:rw
+  #   restart: unless-stopped
+  #   environment:
+  #     MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+  #     MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+  #   networks:
+  #     - default
+  #   container_name: mongo
+
+  # mongo-express:
+  #   image: mongo-express
+  #   restart: unless-stopped
+  #   ports:
+  #     - "${MONGO_EXPRESS_HOST_PORT}:8081"
+  #   links:
+  #       - mongo
+  #   environment:
+  #     ME_CONFIG_OPTIONS_EDITORTHEME: 3024-night
+  #     ME_CONFIG_BASICAUTH_USERNAME: ${ME_CONFIG_BASICAUTH_USERNAME}
+  #     ME_CONFIG_BASICAUTH_PASSWORD: ${ME_CONFIG_BASICAUTH_PASSWORD}
+  #     ME_CONFIG_MONGODB_ADMINUSERNAME: ${ME_CONFIG_MONGODB_ADMINUSERNAME}
+  #     ME_CONFIG_MONGODB_ADMINPASSWORD: ${ME_CONFIG_MONGODB_ADMINPASSWORD}
+  #   container_name: mongo-express
+
+### mysql57 ################################################# 
+  mysql57:
+    image: mysql:${MYSQL_VERSION}
+    ports:
+      - "${MYSQL_HOST_PORT}:3306"
+    volumes:
+      - ${MYSQL_CONF_FILE}:/etc/mysql/conf.d/mysql.cnf:ro
+      - ${MYSQL_DATA_DIR}:/var/lib/mysql/:rw
+    restart: always
+    networks:
+      - default
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
+    container_name: mysql57
+
+
+### redis ################################################# 
+  redis:
+    image: redis:${REDIS_VERSION}
+    ports:
+      - "${REDIS_HOST_PORT}:6379"
+    environment:
+      TZ: ${GLOBAL_TIME_ZONE}  
+    volumes:
+      - ${REDIS_CONF_FILE}:/etc/redis.conf:ro
+      - ${REDIS_LOG_DIR}:/var/log/redis/:rw
+    restart: always
+    entrypoint: ["redis-server", "/etc/redis.conf"]
+    networks:
+      - default
+    sysctls:
+      - net.core.somaxconn=1024
+      - net.ipv4.tcp_syncookies=0  
+    container_name: redis
+    
+  # redis:
+  #   << : *default-common
+  #   build:
+  #     context: ./build/redis/
+  #     args:
+  #       ALPINE_REPOSITORIES: ${ALPINE_REPOSITORIES}
+  #       # ALPINE_REPOSITORIES: mirrors.ustc.edu.cn
+  #   privileged: true
+  #   ports:
+  #     - "${REDIS_HOST_PORT}:6379"
+    # environment:
+    #   TZ: ${GLOBAL_TIME_ZONE}
+  #   networks:
+  #     - net-redis
+  #   volumes:
+  #     - ${REDIS_LOG_DIR}:/var/log/redis/:rw
+  #   command: [
+  #     "redis-server",
+  #     "/etc/redis.conf",
+  #     "--daemonize no",
+  #     "--logfile /var/log/redis/redis.log",
+  #     "--bind 0.0.0.0",
+  #     "--appendonly yes",
+  #     "--aof-use-rdb-preamble yes"
+  #     ]
+    # sysctls:
+    #   - net.core.somaxconn=1024
+    #   - net.ipv4.tcp_syncookies=0
+  #   container_name: redis
+
+
+### gogs #################################################   
+  # gogs:
+  #   << : *default-common
+  #   image: gogs/gogs
+  #   restart: always
+  #   privileged: true
+  #   ports:
+  #     - ${GOGS_SSH_PORT}:22
+  #     - ${GOGS_HOST_PORT}:3000
+  #   environment:
+  #     - RUN_CROND=true
+  #   volumes:
+  #     - ${GLOBAL_GOGS_PATH}:/data
+  #   links:
+  #     - mysql57:mysql57
+  #   depends_on:
+  #      - mysql57
+  #   networks:
+  #     - net-gogs
+  #   container_name: gogs
+
+
+### phpredisadmin #################################################   
+  # phpredisadmin:
+  #   image: erikdubbelboer/phpredisadmin:latest
+  #   ports:
+  #     - "8081:80"
+  #   networks:
+  #     - net-redis
+  #   environment:
+  #     - REDIS_1_HOST=redis
+  #     - REDIS_1_PORT=${REDIS_PORT}
+  #   container_name: phpredisadmin
+
+
+### postgresql #################################################   
+  # postgresql:
+  #   << : *default-common
+  #   image: postgres:alpine
+  #   environment:
+  #     POSTGRES_DB: ${POSTGRES_DB}
+  #     POSTGRES_USER: ${POSTGRES_USER}
+  #     POSTGRES_PASSWORD: ${POSTGRES_ROOT_PASSWORD}
+  #     POSTGRES_ENCODING: ${POSTGRES_CHARSET}
+  #     PGDATA: ${GLOBAL_POSTGRES_PATH}
+  #   ports:
+  #     - "${POSTGRES_PORT}:5432"
+  #   volumes:
+  #     - "${GLOBAL_POSTGRES_PATH}:/data/postgresql_data/"
+  #   restart: unless-stopped
+  #   privileged: true
+  #   networks:
+  #     - net-postgre
+  #   container_name: postgresql
+
+
+### python37 #################################################   
+  # python37:
+  #   << : *default-common
+  #   build:
+  #     context: ./build/python/
+  #     args:
+  #       PYTHON_VERSION: ${PYTHON_VERSION}
+  #       ALPINE_REPOSITORIES: ${ALPINE_REPOSITORIES}
+  #       PYTHON_WEB_PATH: ${PYTHON_WEB_PATH}
+  #       DJANGO_PORT: ${DJANGO_PORT}
+  #   command: python3 ${DJANGO_PROJECT}/manage.py runserver 0.0.0.0:8000
+  #   volumes:
+  #     - ${PYTHON_WEB_PATH}:/var/www/:rw
+  #   restart: always
+  #   privileged: true
+  #   ports:
+  #     - "${DJANGO_PORT}:8000"
+  #   environment:
+  #     - SECRET_KEY=123456
+  #   depends_on:
+  #     - mysql57
+  #   networks:
+  #     - default
+  #   container_name: python37
+
+networks:
+  default:
+  # net-mysql:
+  # net-php73:
+  # net-php72:
+  # net-php56:
+  # net-redis:
+  # net-gogs:
+  # net-postgre:
+  # net-python:
