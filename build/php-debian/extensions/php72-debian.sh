@@ -345,7 +345,7 @@ if [ -z "${EXTENSIONS##*,solr,*}" ]; then
         curl -O https://pecl.php.net/get/solr-${SOLR_EXT_VERSION}.tgz
     fi
     mkdir solr \
-    && apt-get install libcurl4-gnutls-dev -y
+    && apt-get install libcurl4-gnutls-dev -y \
     && tar -xf solr-${SOLR_EXT_VERSION}.tgz -C solr --strip-components=1 \
     && ( cd solr && phpize && ./configure && make ${MC} && make install ) \
     && docker-php-ext-enable solr
