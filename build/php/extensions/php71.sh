@@ -80,6 +80,12 @@ if [ -z "${EXTENSIONS##*,xdebug,*}" ]; then
     docker-php-ext-enable xdebug
 fi
 
+if [ -z "${EXTENSIONS##*,solr,*}" ]; then
+    echo "---------- Install solr ----------"
+    printf "\n" | pecl install solr
+    docker-php-ext-enable solr
+fi
+
 if [ -z "${EXTENSIONS##*,zookeeper,*}" ]; then
     echo "---------- Install zookeeper ----------"
     mkdir zookeeper zookeeper-ext

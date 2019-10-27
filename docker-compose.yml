@@ -86,6 +86,7 @@ services:
         PHP_XHPROF_EXT: ${PHP_XHPROF_EXT}
         SEASLOG_EXT_VERSION: ${SEASLOG_EXT_VERSION}
         MONGODB_EXT_VERSION: ${MONGODB_EXT_VERSION}
+        SOLR_EXT_VERSION: ${SOLR_EXT_VERSION}
     volumes:
       - ${GLOBAL_WEB_PATH}:/var/www/html/:rw
       - ${PHP72_PHP_CONF_FILE}:/usr/local/etc/php/php.ini:ro

@@ -81,6 +81,12 @@ if [ -z "${EXTENSIONS##*,xdebug,*}" ]; then
     docker-php-ext-enable xdebug
 fi
 
+if [ -z "${EXTENSIONS##*,solr,*}" ]; then
+    echo "---------- Install solr ----------"
+    printf "\n" | pecl install solr
+    docker-php-ext-enable solr
+fi
+
 if [ -z "${EXTENSIONS##*,grpc,*}" ]; then
     echo "---------- Install grpc ----------"
     if [ ! -f grpc-${GRPC_EXT_VERSION}.tgz ]; then

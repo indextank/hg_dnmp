@@ -332,6 +332,25 @@ if [ -z "${EXTENSIONS##*,xdebug,*}" ]; then
     docker-php-ext-enable xdebug
 fi
 
+
+# if [ -z "${EXTENSIONS##*,solr,*}" ]; then
+#     echo "---------- Install solr ----------"
+#     printf "\n" | pecl install solr
+#     docker-php-ext-enable solr
+# fi
+if [ -z "${EXTENSIONS##*,solr,*}" ]; then
+    echo "---------- Install solr ----------"
+    if [ ! -f solr-${SOLR_EXT_VERSION}.tgz ]; then
+        printf "\n" | download solr
+        curl -O https://pecl.php.net/get/solr-${SOLR_EXT_VERSION}.tgz
+    fi
+    mkdir solr \
+    && apt-get install libcurl4-gnutls-dev -y
+    && tar -xf solr-${SOLR_EXT_VERSION}.tgz -C solr --strip-components=1 \
+    && ( cd solr && phpize && ./configure && make ${MC} && make install ) \
+    && docker-php-ext-enable solr
+fi
+
 if [ -z "${EXTENSIONS##*,zookeeper,*}" ]; then
     echo "---------- Install zookeeper ----------"
     mkdir zookeeper zookeeper-ext

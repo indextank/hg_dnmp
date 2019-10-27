@@ -83,6 +83,12 @@ if [ -z "${EXTENSIONS##*,xdebug,*}" ]; then
     docker-php-ext-enable xdebug
 fi
 
+if [ -z "${EXTENSIONS##*,solr,*}" ]; then
+    echo "---------- Install solr ----------"
+    printf "\n" | pecl install solr
+    docker-php-ext-enable solr
+fi
+
 if [ -z "${EXTENSIONS##*,redis,*}" ]; then
     echo "---------- Install redis ----------"
     mkdir redis \
