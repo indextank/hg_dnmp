@@ -29,19 +29,19 @@ syncs:
     sync_host_ip: 'auto'
     notify_terminal: true
 
-  # linux-sync:
-  #   src: './www'
-  #   sync_strategy: 'unison'
-  #   sync_host_port: 10872
-  #   sync_userid: '1000'
-  #   host_disk_mount_mode: 'cached'
-  #   sync_excludes: ['Gemfile.lock', 'Gemfile', 'config.rb', '.sass-cache', 'sass', 'sass-cache', 'composer.json' , 'bower.json', 'package.json', 'Gruntfile*', 'bower_components', 'node_modules', '.gitignore', '.git', '*.coffee', '*.scss', '*.sass']
-  #   sync_args:
-  #     - "-ignore='Path .idea'"
-  #     - "-ignore='Path .git'"
-  #     - "-ignore='BelowPath .git'"
-  #     - "-ignore='Path var/cache/*'"
-  #     - "-ignore='Path var/sessions/*'"
-  #     - "-ignore='Path node_modules/*'"
-  #   sync_host_ip: 'auto'
-  #   notify_terminal: true
+  linux-sync:
+    src: ${GLOBAL_WEB_PATH}
+    sync_strategy: 'unison'
+    sync_host_port: 10872
+    sync_userid: '1000'
+    host_disk_mount_mode: 'cached'
+    sync_excludes: ['Gemfile.lock', 'Gemfile', 'config.rb', '.sass-cache', 'sass', 'sass-cache', 'composer.json' , 'bower.json', 'package.json', 'Gruntfile*', 'bower_components', 'node_modules', '.gitignore', '.git', '*.coffee', '*.scss', '*.sass']
+    sync_args:
+      - "-ignore='Path .idea'"
+      - "-ignore='Path .git'"
+      - "-ignore='BelowPath .git'"
+      - "-ignore='Path var/cache/*'"
+      - "-ignore='Path var/sessions/*'"
+      - "-ignore='Path node_modules/*'"
+    sync_host_ip: 'auto'
+    notify_terminal: true

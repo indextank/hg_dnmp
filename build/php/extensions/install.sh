@@ -18,7 +18,7 @@ fi
 
 if [ "${PHP_EXTENSIONS}" != "" ]; then
     echo "---------- Install general dependencies ----------"
-    apk update && apk add --no-cache autoconf g++ libtool make curl-dev libxml2-dev linux-headers
+    apk update && apk add --no-cache autoconf g++ libtool make curl-dev libxml2-dev linux-headers gettext-dev libzip oniguruma
 fi
 
 if [ -z "${EXTENSIONS##*,pdo_mysql,*}" ]; then
@@ -156,17 +156,9 @@ if [ -z "${EXTENSIONS##*,interbase,*}" ]; then
 	#docker-php-ext-install ${MC} interbase
 fi
 
-if [ -z "${EXTENSIONS##*,gd,*}" ]; then
-    echo "---------- Install gd ----------"
-    apk update \
-    && apk add --no-cache freetype-dev libjpeg-turbo-dev libpng-dev libpng-dev libwebp libwebp-dev \
-    && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ --with-webp-dir=/usr/include/ \
-    && docker-php-ext-install ${MC} gd
-fi
-
 if [ -z "${EXTENSIONS##*,intl,*}" ]; then
     echo "---------- Install intl ----------"
-    apk update && apk add --no-cache icu-dev
+    apk update && apk add --no-cache icu icu-dev
     docker-php-ext-install ${MC} intl
 fi
 

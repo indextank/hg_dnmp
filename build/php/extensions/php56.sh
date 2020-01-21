@@ -89,16 +89,15 @@ fi
 
 if [ -z "${EXTENSIONS##*,xdebug,*}" ]; then
     echo "---------- Install xdebug ----------"
-    mkdir xdebug
     if [ ! -f xdebug-${XDEBUG_EXT_VERSION}.tgz ]; then
-        apk update \
-        && apk add --no-cache wget \
-        && wget --no-check-certificate https://pecl.php.net/get/xdebug-${XDEBUG_EXT_VERSION}.tgz
+        printf "\n" | pecl install xdebug
+        docker-php-ext-enable xdebug
+    else
+        mkdir xdebug \
+        && tar -xf xdebug-${XDEBUG_EXT_VERSION}.tgz -C xdebug --strip-components=1 \
+        && ( cd xdebug && phpize && ./configure && make ${MC} && make install ) \
+        && docker-php-ext-enable xdebug
     fi
-
-    tar -xf xdebug-${XDEBUG_EXT_VERSION}.tgz -C xdebug --strip-components=1 \
-    && ( cd xdebug && phpize && ./configure && make ${MC} && make install ) \
-    && docker-php-ext-enable xdebug
 fi
 
 if [ -z "${EXTENSIONS##*,redis,*}" ]; then

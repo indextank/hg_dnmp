@@ -3,11 +3,18 @@ FROM python:${PYTHON_VERSION}-alpine
 
 ENV PYTHONUNBUFFERED 1
 
-# 设置相应的时区
-RUN sed -i "s/dl-cdn.alpinelinux.org/${ALPINE_REPOSITORIES}/g" /etc/apk/repositories && \
-    apk add --no-cache tzdata && \
+ARG CHANGE_SOURCE=false
+RUN if [ ${CHANGE_SOURCE} = true ]; then \
+    sed -i "s/dl-cdn.alpinelinux.org/${ALPINE_REPOSITORIES}/g" /etc/apk/repositories && \
+    apk update && apk add --no-cache tzdata && \
     cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo "Asia/Shanghai" > /etc/timezone && \
-    apk del tzdata
+    apk del tzdata \
+;fi
+
+# RUN sed -i "s/dl-cdn.alpinelinux.org/${ALPINE_REPOSITORIES}/g" /etc/apk/repositories && \
+#     apk update && apk add --no-cache tzdata && \
+#     cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo "Asia/Shanghai" > /etc/timezone && \
+#     apk del tzdata
 
 # Creating working directory
 RUN mkdir -p /var/www/

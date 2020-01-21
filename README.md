@@ -1,56 +1,93 @@
-HG_DNMP（Docker + Nginx + MySQL5.7 + PHP7/5 + Redis + Gogs + Postgresql）是一款全功能的**LNMP一键安装程序**。
+HG_DNMP取自（Docker + Nginx + MySQL5.7 + PHP7/5）的简称，当然我们不仅仅满足于支持DNMP这点功能，HG_DNMP是一款全功能的**DNMP一键安装程序**，还支持Redis 、Postgresql 、 Confluence 、 Gitlab等。
+即可满足本地开发环境的使用，亦可做为生产环境服务端的部署，同时也是学习docker编排的最好demo实例。
 
-HG_DNMP项目特点：
-1. `100%`开源，遵循Docker标准
-2. 采用最新Docker版本制作（version: 3.7）
-3. 支持**多版本PHP**共存，可任意切换（PHP5.6、PHP7.2)
-4. 支持绑定**任意多个域名**
-5. 支持**HTTPS和HTTP/2**
-6. **PHP源代码、MySQL数据、配置文件、日志文件**都可在Host中直接修改查看
-7. 内置**完整PHP扩展安装**命令
-8. 默认安装`pdo_mysql`、`redis`、`xdebug`、`swoole`、`grpc`、`seaslog`、`protobuf`、`zookeeper`、`seaslog`、`mongodb`、`tideways`、`xhprof`等常用热门扩展【可根据需要动态调整】
-9. 默认php支持webp图片格式
-10. 带有phpredisadmin数据库在线管理程序 (默认不安装，可手动开启注释代码)
-11. 实际项目中应用，确保`100%`可用
-12. 一次配置，**Windows、Linux、MacOs**皆可用
-13. 通过bg-sync进行访问加速，解决环境中项目运行缓慢情况
+本项目在保证规范统一的大前提下，针对同一方式的，尽量会使用不同写法，目的就是为了便于docker编排学习。
 
+### HG_DNMP项目特点：
+```
+1. `100%`开源，基于alpine镜像，遵循Docker标准
+2. 采用最新Docker版本制作
+3. 支持**多版本PHP**共存，可任意切换（PHP5.6、PHP7.1、PHP7.2、PHP7.3、PHP7.4)
+4. 默认php支持webp图片格式
+5. 支持绑定**任意多个域名**
+6. 支持**HTTPS和HTTP/2**
+7. **PHP源代码、MySQL数据、配置文件、日志文件**可根据需求实现自定义
+8. 内置**完整PHP扩展安装**命令
+9. 支持php常用热门扩展，如grpc, swoole等【具体扩展可参考.env动态调整】
+10. 实际项目中应用，确保`100%`可用
+11. 一次配置，**Windows、Linux、MacOs**皆可用
+12. 通过bg-sync进行访问加速，解决开发环境中项目运行缓慢情况
+```
 
-### 终极效果演示：
-![Demo Image](./snapshot/phpinfo.png)
+### 约定：
+```
+1、默认提供证书为*.default.com泛域名。如果作为本地开发环境使用，请根据当前约定，自行修改本机默认的hosts文件；
+生产环境下使用，请修改.env和conf/conf.d下相关配置文件后，再执行安装，避免安装后的再调整。
 
-## 1.项目结构
+2、conf/conf.d下的关于nginx的vhost文件，根据需要请在执行安装前，自行删减，避免安装后nginx报错。
+
+3、php提供Debian和alpine镜像两种方式，默认使用Alpine镜像，如果php扩展在alpine镜像下不支持，可以使用debian镜像的编排，具体实例可参考docker-compose.yml中php72-debian
+
+4、当前发布时，alpine镜像版的php 7.4.1，暂不支持gd库。
+
+5、约定地址：
+
+    jenkins访问地址：https://jenkins.default.com
+    gitlab访问地址：https://gitlab.default.com
+    confluence访问地址：https://confluence.default.com
+    php 5.6测试地址：https://56.default.com
+    php 7.1测试地址：https://71.default.com
+    php 7.2测试地址：https://72.default.com
+    php 7.3测试地址：https://73.default.com
+    php 7.4测试地址：https://74.default.com
+
+6、为了提高国内下载构建速度，相关软件包全部放在根目录下的src下，请通过百度网盘下载后，放在根目录下即可。
+    网盘下载链接：https://pan.baidu.com/s/1dkEz_BZJo1901fxWTFxiXA     提取码：6eao
+```
+
+## 终极效果演示：
+![Demo Image](./snapshot/phpinfo.jpg)
+
+# 1.项目结构
 目录说明：
 ```
-/
-hg_dnmp/
-├── README.md
-├── build                   项目构建文件夹
+../hg_dnmp/
+├── build           项目构建文件夹
+│   ├── certbot
+│   ├── confluence
+│   ├── gitlab
 │   ├── mongo
-│   ├── php                 基于alpine镜像的php
-│   ├── php-debian          基于debian镜像的php
+│   ├── php         基于alpine镜像的php
+│   ├── php-debian  基于debian镜像的php (便于部分扩展在alpine下构建不支持，可切换到debian镜像)
+│   ├── postgres
 │   ├── python
 │   └── redis
-├── conf                    配置文件目录
-│   ├── conf.d              Nginx用户站点配置目录
-│   ├── nginx.conf          Nginx默认配置文件
-│   ├── mysql.cnf           MySQL用户配置文件
-│   ├── php-fpm.conf        PHP-FPM配置文件（部分会覆盖php.ini配置）
-│   └── php.ini             PHP默认配置文件
-│   └── redis.conf          Redis配置文件
-├── docker-allip            可执行命令，显示docker虚拟机的ip
-├── docker-compose-Darwin.yml       Mac系统使用的docker sync相关yml文件
-├── docker-compose-Linux.yml        Linux系统使用的docker sync相关yml文件
+├── centos7-optimizer.sh        centos7优化脚本
+├── conf                        相关配置文件
+│   ├── conf.d                  Nginx用户站点配置目录
+│   │   ├── certs               https证书目录
+│   ├── mysql.cnf               MySQL用户配置文件
+│   ├── nginx.conf              Nginx配置文件
+│   ├── php                     Php配置文件
+│   └── redis.conf              Redis配置文件
+├── docker-allip
+├── docker-compose-Darwin.yml   Mac系统使用的docker sync相关yml文件
+├── docker-compose-Linux.yml    Linux系统使用的docker sync相关yml文件
 ├── docker-compose.yml
 ├── docker-sync.yml
-├── logs                    日志目录
-├── snapshot                
-└── www                     项目目录
+├── include
+├── logs         日志目录
+├── README.md
+├── snapshot
+└── src          程序源码安装包 - 减少安装过程中的下载时间（如果修改软件版本号，建议提前下载好放进来）
 
 ```
 
-## 2. 使用说明
-1. 本地安装`git`、`docker`和`docker-compose`。
+# 2. 使用说明
+1. 本地安装`git`、`docker`和`docker-compose`
+
+    CentOS 7用户可以通过提供的centos7-optimizer.sh脚本一键安装
+
 2. `clone`项目：
     ```
     $ git clone https://gitee.com/indextank/hg_dnmp.git
@@ -61,11 +98,17 @@ hg_dnmp/
     ```
 4. 常用命令：
 
-    4.1 创建并且启动所有容器(-d，代表后台运行方式)
+    4.1 创建并且启动所有容器 (-d，代表后台运行方式)
     ```
     $ docker-compose -f docker-compose.yml up -d
     ```
-    4.2 启动单个容器
+
+    此种方式，不推荐~建议根据个人需要，启动相应的服务即可。比如启动nginx+mysql
+    ```
+    $ docker-compose up nginx mysql57
+    ```
+
+    4.2 启动并进入单个容器
     ```
     $ docker run -it mysql:5.7 /bin/bash
     ```
@@ -76,28 +119,42 @@ hg_dnmp/
     4.4 启动|停止|重启服务
     ```
     $ docker-compose start|stop|restart 服务1 服务2 ...
+    或
+    $ docker start|stop|restart  服务1 服务2 ...
     ```
     4.5 进入命令行容器
     ```
     $ docker-compose exec 服务 bash
+    或
+    $ docker exec -it 服务 /bin/sh
     ```
-    4.6 删除并且停止容器
-    ```
-    $ docker-compose rm 服务1 服务2 ...
-    ```
-    4.7 停止并删除容器，网络，图像和挂载卷
+    4.6 停止并删除容器，网络，图像和挂载卷
     ```
     $ docker-compose down 服务1 服务2 ...
     ```
-    4.8 批量删除容器
+    4.7 删除容器
+    ```
+    $ docker-compose rm 容器ID
+    ```
+    4.8 删除镜像
+    ```
+    $ docker-compose rmi 镜像ID
+    ```
+    4.9 批量删除容器
     ```
     $ docker container rm $(docker container ls -a -q)
     ```
-    4.9 批量删除镜像
+    4.10 批量删除镜像
     ```
     $ docker image rm $(docker image ls -a -q)
     ```
-    4.10 mac上安装docker-sync
+    4.11 批量删除无用镜象（三种方式都可以，想强制删除可在rmi后加-f）
+    ```
+    docker images | grep none | awk '{print $3}' | xargs docker rmi
+    docker rmi $(docker images | grep "^" | awk "{print $3}")
+    docker rmi $( docker images -f dangling=true)
+    ```
+    4.12 mac上安装docker-sync
     ```
     $ gem install docker-sync
     $ brew install fswatch
@@ -107,24 +164,17 @@ hg_dnmp/
     $ source ~/.bash_profile
     $ docker-sync start  或 docker-sync-stack start
     ```
-    4.11 使用 docker-sync 让 mac 和 docker 之间的文件同步变快【 仅支持Mac/Linux 】
+    4.13 使用 docker-sync 让 Mac/Linux 和 docker 之间的文件同步变快【 仅支持Mac/Linux 】
     ```
-    $ docker-compose -f docker-compose.yml -f docker-compose-$(uname -s).yml up  
+    $ docker-compose -f docker-compose.yml -f docker-compose-$(uname -s).yml up
     ```
-    4.12 以守护进程方式启动 【推荐使用】
+    4.14 以守护进程方式启动 【推荐使用】
     ```
     $ docker-sync-daemon start  && docker-compose up -d
     ```
-5. 访问在浏览器中访问：
-
- - [http://localhost](http://localhost)： 默认*http*站点
- - [https://localhost](https://localhost)：自定义证书*https*站点，访问时浏览器会有安全提示，忽略提示访问即可. 
- 下面会有介绍如何在本地开发导入https证书
 
 
-## 3. 切换PHP版本？
-默认情况下，我们同时创建 **PHP5.6和PHP7.3** 2个PHP版本的容器，
-
+# 3. 切换PHP版本？
 切换PHP仅需修改相应站点 Nginx 配置的`fastcgi_pass`选项，
 
 例如，示例的**localhost**用的是PHP5.6，Nginx 配置：
@@ -135,13 +185,13 @@ hg_dnmp/
 ```
     fastcgi_pass   php73:9000;
 ```
-再
+再**重启 Nginx** 生效
 ```
     $ docker-compose restart nginx
 ```
- **重启 Nginx** 生效。
 
-## 4. 添加快捷命令
+
+# 4. 添加快捷命令
 在开发的时候，我们可能经常使用docker exec -it切换到容器中，把常用的做成命令别名是个省事的方法。
 
 Linux系统打开~/.bashrc (Mac OS系统打开~/.bash_profile)，加上：
@@ -159,220 +209,103 @@ alias dpostgre='docker exec -it postgresql /bin/sh'
 ```
 后期使用中，如果想进入容器，直接在终端输入别名即可。
 
-## 5. 使用Log
+# 5. 在正式环境中安全使用
+要在正式环境中使用，请注意相关配置调整：
+1. 在php.ini中关闭XDebug调试及错误级别(默认错误级别为ALL)
+2. 增强MySQL数据库访问的安全策略
+3. 增强redis访问的安全策略，默认bind为0.0.0.0
 
-Log文件生成的位置依赖于conf下各logs配置的值。
+# 6. 使用Logs
 
-### 5.1 Nginx日志
-Nginx日志是我们用得最多的日志，所以我们单独放在根目录`logs`下。
+默认所有日志，会全部归结到logs文件夹下各自的项目文件夹中，如果需要修改日志路径，请对应修改各自程序的配置文件即可。
 
-`logs`会目录映射Nginx容器的`/var/log/dnmp`目录，所以在Nginx配置文件中，需要输出log的位置，我们需要配置到`/var/log/dnmp`目录，如：
-```
-error_log  /var/log/dnmp/nginx.localhost.error.log  warn;
-```
-
-
-### 5.1 PHP-FPM日志
-大部分情况下，PHP-FPM的日志都会输出到Nginx的日志中，所以不需要额外配置。
-
-如果确实需要，可按一下步骤开启。
-
-1. 在主机中创建日志文件并修改权限：
-    ```bash
-    $ touch log/php-fpm.error.log
-    $ chmod a+w log/php-fpm.error.log
-    ```
-2. 主机上打开并修改PHP-FPM的配置文件`conf/php-fpm.conf`，找到如下一行，删除注释，并改值为：
-    ```
-    php_admin_value[error_log] = /var/log/dnmp/php-fpm.error.log
-    ```
-3. 重启PHP-FPM容器。
-
-### 5.2 MySQL日志
-因为MySQL容器中的MySQL使用的是`mysql`用户启动，它无法自行在`/var/log`下的增加日志文件。所以，我们把MySQL的日志放在与data一样的目录，即项目的`mysql`目录下，对应容器中的`/var/lib/mysql/`目录。
-```bash
-slow-query-log-file     = /var/lib/mysql/mysql.slow.log
-log-error               = /var/lib/mysql/mysql.error.log
-```
-以上是mysql.conf中的日志文件的配置。
-
-## 6. 使用composer
+# 7. 使用composer
 dnmp默认已经在容器中安装了composer，使用时先进入容器：
 ```
 $ docker exec -it php73 /bin/bash
 ```
 然后进入相应目录，使用composer：
 ```
-# cd /var/www/html/localhost
+# cd /var/www/html/default
 # composer update
 ```
 因为composer依赖于PHP，所以，是必须在容器里面操作composer的。
 
-## 7. phpredisadmin
-本项目默认在`docker-compose.yml`中加入了用于redis在线管理的*phpRedisAdmin*，可以根据需要修改或删除。（需要手动取消代码注释，开启）
 
-phpRedisAdmin容器映射到主机的端口地址是：`8081`，所以主机上访问phpMyAdmin的地址是：
+# 8. Confluence使用
+### 关于Confluence破解方法：
+将atlassian-extras-decoder-v2-3.4.1.jar 从Confluence docker容器里复制到本地，用keygen.sh破解（.patch按钮），然后将破解后的文件复制回去，重启Confluence
+
+ps1: 破解文件在build/confluence目录下
+
+ps2: atlassian-extras-decoder-v2-3.4.1.jar会随着confluence版本的不同，而不同，以实际为准
+
 ```
-http://localhost:8081
+$ docker cp confluence:/opt/atlassian/confluence/confluence/WEB-INF/lib/atlassian-extras-decoder-v2-3.4.1.jar ./
+$ mv atlassian-extras-decoder-v2-3.4.1.jar atlassian-extras-2.4.jar
+$ ... (此处需要用hg_dnmp/build/confluence/confluence_keygen.jar文件进行打补丁...打完补丁以后...)
+$ mv atlassian-extras-2.4.jar atlassian-extras-decoder-v2-3.4.1.jar
+$ docker cp ./atlassian-extras-decoder-v2-3.4.1.jar confluence:/opt/atlassian/confluence/confluence/WEB-INF/lib/
+$ docker-compose restart confluence
 ```
 
-Redis连接信息如下：
-- host: (本项目的Redis容器网络)
-- port: `6379`
+# 9. Gitlab使用
+默认gitlab使用的CE社区版，启用的是内置nginx，内置80端口做了映射转换。
 
-## 8. 在正式环境中安全使用
-要在正式环境中使用，请：
-1. 在php.ini中关闭XDebug调试及错误级别(默认错误级别为ALL)
-2. 增强MySQL数据库访问的安全策略
-3. 增强redis访问的安全策略
+如果需要编辑gitlab配置文件
+```
+$ docker exec -it gitlab vim /etc/gitlab/gitlab.rb
+$ docker restart gitlab
+```
+
+
+### #关于Confluence使用postgresql数据库方法
+默认Confluence使用postgresql数据库，所以confluence依赖与postgres,并且在postgres创建的时候，默认会创建供Confluence使用的数据空间及账号密码（可以从.env查看）
+
+ps: 在Confluence设置数据库的界面中，Hostname，请填写postgres的container_name镜像名称。
+
+### 关于Confluence使用mysql数据库方法
+默认已经将mysql支持的jar包括在系统中了，如果设置选择Mysql提示没有，需要自行将src/confluence目录下的mysql-connector-java-8.0.18.jar拷贝到docker镜像中
+```
+docker cp ./build/confluence/mysql-connector-java-8.0.18.jar confluence:/opt/atlassian/confluence/confluence/WEB-INF/lib
+docker-compose restart confluence
+```
+ps: 在Confluence设置数据库的界面中，Hostname，请填写mysql57的container_name镜像名称。
 
 ## 常见问题
 1. 如何开启本地https，且实现本地证书可信任
-    > 这里以Mac OS为例： 
+    > Mac OS系统：
     打开“钥匙串访问”工具，导入conf/conf.d/certs/localRootCA.crt证书，并全部设置为可信任即可。
 
-其它系统原理一样，导入localRootCA.crt证书即可
-```
-暂时本机（Mac OS 10.14）测试支持chrome、Safari浏览器，frefox下貌似不支持
-```
+    > Windows系统：在Chrome浏览器的“设置”中
+    ![Demo Image](./snapshot/win-自签名证书.png)
 
-2. 本地哪些域名默认支持https正常显示访问？
+
+2. 本地哪些域名默认支持https正常显示访问？
    默认localRootCA.crt里面，设置了如下域名的泛解析证书
-```
-*.php.local
-*.java.local
-*.python.local
-*.go.local
-*.local.com
-*.style.com
-localhost
-127.0.0.1
-172.16.100.199  [本机内网IP]
-192.168.1.199   [本机内网IP]
-```
-假设某项目本地地址为：https://default.php.local, 
-那么只需在hosts里面加入:
-> 127.0.0.1 default.php.local
+    ```
+    *.default.com
+    *.test.com
+    ```
+    假设某项目本地地址为：https://71.default.com,
+    那么只需在本机的hosts里面加入:
+    > 127.0.0.1 71.default.com
 
-即可正常访问
+    即可正常访问
 
-![Demo Image](./snapshot/localhost_https.png)
-
-3. 我想自己定义本地域名，不想用你定义好的本地域名该如何操作？
-
+3. 自定义本地域名：
     编辑conf/conf.d/certs/localRootCA.conf底部内容，按照现有格式，修改成自己喜欢的域名格式
     然后执行
-```
-$ openssl req -config localRootCA.conf -new -sha256 -newkey rsa:2048 -nodes -keyout localRootCA.key -x509 -days 365 -out localRootCA.crt
-```
-即可重新生成自己的localRootCA.crt证书，在执行导入即可。
+    ```
+    $ openssl req -config localRootCA.conf -new -sha256 -newkey rsa:2048 -nodes -keyout localRootCA.key -x509 -days 365 -out localRootCA.crt
+    ```
+    即可重新生成自己的localRootCA.crt证书，在执行导入即可。
 
-3. 如何在PHP代码中使用curl？
+## Author
+作者：Euper
 
-这里我们使用curl指的是从PHP容器curl到Nginx容器，比如Nginx中我们配置了：
-- www.site1.com
-- www.site2.com
+QQ: 272457050
 
-在site1的PHP代码中，我们要从site1 curl site2服务器，方法如下。
-
-首先，找到Nginx容器的IP地址，命令：
-```
-$ docker network inspect dnmp_net-php56
-...
-    "Containers": {
-        ...{
-            "Name": "nginx",
-            ...
-            "IPv4Address": "172.27.0.3/16",
-            ...
-        },
-```
-这个命令会显示连接到该网络的所有容器，容器nginx的`IPv4Address`就是nginx的IP地址。
-修改docker-compose.yml，在php56服务下加上：
-```
-  php56:
-    ...
-    extra_hosts:
-      - "www.site2.com:172.27.0.3"
-```
-这样就可以在www.site1.com中curl site2了。
-
-4. 在本地如何访问gogs?
-
-    > gogs默认访问地址： http://localhost:3000
-
-    相关配置，请修改data/gogs_data/gogs/conf/app.ini内容
-    以下为我本地的配置，仅供参考
-   
- ```
-    APP_NAME = Gogs
-    RUN_USER = git
-    RUN_MODE = prod
-
-    [database]
-    DB_TYPE  = mysql
-    HOST     = 172.16.100.199:3306  # 这是我本地ip
-    NAME     = gogs
-    USER     = root
-    PASSWD   = 123456
-    SSL_MODE = disable
-    PATH     = data/gogs.db
-
-    [repository]
-    ROOT = /data/git/gogs-repositories
-
-    [server]
-    DOMAIN           = localhost
-    HTTP_PORT        = 3000
-    
-    # 如果需要开启https访问
-    # 请拷贝localRootCA.crt和localRootCA.key到/data/gogs/conf/目录下
-    PROTOCOL         = https
-    ROOT_URL         = https://localhost:3000
-    CERT_FILE        = /data/gogs/conf/localRootCA.crt
-    KEY_FILE         = /data/gogs/conf/localRootCA.key
-    DISABLE_SSH      = false
-    SSH_PORT         = 22
-    START_SSH_SERVER = false
-    OFFLINE_MODE     = false
-
-    [mailer]
-    ENABLED = false
-
-    [service]
-    REGISTER_EMAIL_CONFIRM = false
-    ENABLE_NOTIFY_MAIL     = false
-    DISABLE_REGISTRATION   = true
-    ENABLE_CAPTCHA         = false
-    REQUIRE_SIGNIN_VIEW    = true
-
-    [picture]
-    DISABLE_GRAVATAR        = false
-    ENABLE_FEDERATED_AVATAR = false
-
-    [session]
-    PROVIDER = file
-
-    [log]
-    MODE      = file
-    LEVEL     = Info
-    ROOT_PATH = /app/gogs/log
-
-    [security]
-    INSTALL_LOCK = true
-    SECRET_KEY   = Js4VHDjrObUKn0m
-
-```
-
-5. 安装时出现错误：
-/bin/sh: 1: /tmp/extensions/install.sh: not found
-ERROR: Service 'php73' failed to build: The command '/bin/sh -c chmod +x /tmp/extensions/install.sh     && /tmp/extensions/install.sh     && rm -rf /tmp/extensions' returned a non-zero code: 127
-该问题目前只在windows下发现，Mac下未出现问题，什么原因暂不清楚，有谁知道的可以告知下。临时解决办法是
-> ADD https://gitee.com/indextank/hg_dnmp/raw/master/build/php/extensions/install.sh /tmp/extensions
-
-该方法已经加入了项目代码中。无需重复添加，再次记录下
 
 ## License
 GPL-3.0
-
-

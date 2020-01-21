@@ -10,8 +10,12 @@ echo "Work directory            : ${PWD}"
 echo "============================================"
 echo
 
-if [ -z "${EXTENSIONS##*,zookeeper,*}" ]; then
-    echo "---------- pecl/zookeeper 0.6.4 requires PHP (version >= 7.0.0, version <= 7.2.99) ----------"
+if [ -z "${EXTENSIONS##*,gd,*}" ]; then
+    echo "---------- Install gd ----------"
+    apk update \
+    && apk add --no-cache freetype freetype-dev jpeg jpeg-dev libjpeg libjpeg-turbo libjpeg-turbo-dev libpng-dev libwebp libwebp-dev \
+    && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ --with-webp-dir=/usr/include/ \
+    && docker-php-ext-install ${MC} gd
 fi
 
 if [ -z "${EXTENSIONS##*,mcrypt,*}" ]; then
@@ -77,14 +81,30 @@ fi
 
 if [ -z "${EXTENSIONS##*,xdebug,*}" ]; then
     echo "---------- Install xdebug ----------"
-    printf "\n" | pecl install xdebug
-    docker-php-ext-enable xdebug
+    if [ ! -f xdebug-${XDEBUG_EXT_VERSION}.tgz ]; then
+        printf "\n" | pecl install xdebug
+        docker-php-ext-enable xdebug
+    else
+        mkdir xdebug \
+        && tar -xf xdebug-${XDEBUG_EXT_VERSION}.tgz -C xdebug --strip-components=1 \
+        && ( cd xdebug && phpize && ./configure && make ${MC} && make install ) \
+        && docker-php-ext-enable xdebug
+    fi
 fi
 
 if [ -z "${EXTENSIONS##*,solr,*}" ]; then
     echo "---------- Install solr ----------"
-    printf "\n" | pecl install solr
-    docker-php-ext-enable solr
+    if [ ! -f solr-${SOLR_EXT_VERSION}.tgz ]; then
+        printf "\n" | pecl install solr
+        docker-php-ext-enable solr
+    else
+        mkdir solr \
+        && apk update \
+        && apk add --no-cache gnutls-dev -y \
+        && tar -xf solr-${SOLR_EXT_VERSION}.tgz -C solr --strip-components=1 \
+        && ( cd solr && phpize && ./configure && make ${MC} && make install ) \
+        && docker-php-ext-enable solr
+    fi
 fi
 
 if [ -z "${EXTENSIONS##*,grpc,*}" ]; then
@@ -113,49 +133,6 @@ if [ -z "${EXTENSIONS##*,redis,*}" ]; then
     fi
 fi
 
-if [ -z "${EXTENSIONS##*,tideways,*}" ]; then
-    echo "---------- Install tideways ----------"
-    if [ ! -f php-xhprof-extension-${PHP_XHPROF_EXT}.tar.gz ]; then
-        apk update \
-        && apk add --no-cache wget \
-        && wget --no-check-certificate https://codeload.github.com/tideways/php-xhprof-extension/tar.gz/v${PHP_XHPROF_EXT} -O php-xhprof-extension-${PHP_XHPROF_EXT}.tar.gz
-    fi
-    
-    mkdir tideways \
-    && tar -xf php-xhprof-extension-${PHP_XHPROF_EXT}.tar.gz -C tideways --strip-components=1 \
-    && ( cd tideways && phpize && ./configure && make ${MC} && make install ) \
-    && docker-php-ext-enable tideways
-fi
-
-# if [ -z "${EXTENSIONS##*,xhprof,*}" ]; then
-#     echo "---------- Install tideways ----------"
-#     mkdir xhprof \
-#     && apk update \
-#     && apk add --no-cache git graphviz \
-#     && git clone https://github.com/longxinH/xhprof.git ./xhprof \
-#     && ( cd xhprof/extension/ && phpize && ./configure && make ${MC} && make install ) \
-#     && docker-php-ext-enable xhprof
-# fi
-
-if [ -z "${EXTENSIONS##*,xhprof,*}" ]; then
-    echo "---------- Install tideways ----------"
-    mkdir xhprof \
-    && apk update \
-    && apk add --no-cache git graphviz
-
-    if [ ! -f xhprof-php7.zip ]; then
-        apk add --no-cache git \
-        && git clone https://github.com/longxinH/xhprof.git ./xhprof-master
-    else
-        apk add --no-cache unzip \
-        && unzip xhprof-php7.zip
-    fi
-
-    ( cd xhprof-master/extension/ && phpize && ./configure && make ${MC} && make install ) \
-    && rm -fr xhprof-master \
-    && docker-php-ext-enable xhprof
-fi
-
 if [ -z "${EXTENSIONS##*,swoole,*}" ]; then
     echo "---------- Install swoole ----------"
     if [ ! -f swoole-${SWOOLE_EXT_VERSION}.tgz ]; then
@@ -174,7 +151,7 @@ if [ -z "${EXTENSIONS##*,rdkafka,*}" ]; then
     if [ ! -f librdkafka-${LIBRDKAFKA_VERSION}.tar.gz ]; then
         apk update \
         && apk add --no-cache wget \
-        wget --no-check-certificate https://codeload.github.com/edenhill/librdkafka/tar.gz/v${LIBRDKAFKA_VERSION} -O librdkafka-${LIBRDKAFKA_VERSION}.tar.gz
+        wget --no-check-certificate -c https://codeload.github.com/edenhill/librdkafka/tar.gz/v${LIBRDKAFKA_VERSION} -O librdkafka-${LIBRDKAFKA_VERSION}.tar.gz
     fi
 
     mkdir librdkafka \
@@ -198,7 +175,7 @@ if [ -z "${EXTENSIONS##*,protobuf,*}" ]; then
     if [ ! -f protobuf-all-${PROTOBUF_VERSION}.tar.gz ]; then
         apk update \
         && apk add --no-cache wget re2c \
-        && wget --no-check-certificate https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOBUF_VERSION}/protobuf-all-${PROTOBUF_VERSION}.tar.gz
+        && wget --no-check-certificate -c https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOBUF_VERSION}/protobuf-all-${PROTOBUF_VERSION}.tar.gz
     fi
 
     mkdir protobuf-all \
@@ -215,4 +192,26 @@ if [ -z "${EXTENSIONS##*,protobuf,*}" ]; then
         && ( cd protobuf && phpize && ./configure && make ${MC} && make install && cd .. && rm -fr protobuf ) \
         && docker-php-ext-enable protobuf
     fi
+fi
+
+if [ -z "${EXTENSIONS##*,zookeeper,*}" ]; then
+    echo "---------- Install zookeeper ----------"
+    apk update \
+    && apk add --no-cache wget re2c autoconf libtool automake cppunit cppunit-dev file
+
+    if [ ! -f apache-zookeeper-${ZOOKEEPER_VERSION}.tar.gz ]; then
+        wget --no-check-certificate -c https://mirrors.tuna.tsinghua.edu.cn/apache/zookeeper/zookeeper-${ZOOKEEPER_VERSION}/apache-zookeeper-${ZOOKEEPER_VERSION}.tar.gz
+    fi
+
+    if [ ! -f zookeeper-${ZOOKEEPER_EXT_VERSION}.tgz ];then
+        wget --no-check-certificate -c https://pecl.php.net/get/zookeeper-${ZOOKEEPER_EXT_VERSION}.tgz
+    fi
+
+    mkdir zookeeper \
+    && tar -xf apache-zookeeper-${ZOOKEEPER_VERSION}.tar.gz -C zookeeper --strip-components=1 \
+    && ( cd zookeeper/zookeeper-client/zookeeper-client-c && autoreconf -if && ACLOCAL="aclocal -I /usr/share/aclocal" autoreconf -if && ./configure --prefix=/usr/local/zookeeper && make CFLAGS="-Wno-error" ${MC} && make install ) \
+    && mkdir zookeeper-ext \
+    && tar -xf zookeeper-${ZOOKEEPER_EXT_VERSION}.tgz -C zookeeper-ext --strip-components=1 \
+    && ( cd zookeeper-ext && phpize && ./configure --with-libzookeeper-dir=/usr/local/zookeeper && make ${MC} && make install ) \
+    && docker-php-ext-enable zookeeper
 fi

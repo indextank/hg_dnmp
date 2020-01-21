@@ -4,3 +4,7 @@
 .vscode
 www
 */.DS_Store
+*.conf
+data
+install.log
+optimizer.log

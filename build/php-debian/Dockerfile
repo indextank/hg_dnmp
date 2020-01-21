@@ -16,14 +16,13 @@ ARG RDKAFKA_EXT_VERSION
 ARG ZOOKEEPER_VERSION
 ARG ZOOKEEPER_EXT_VERSION
 ARG PROTOBUF_VERSION
-ARG PHP_XHPROF_EXT
 ARG SEASLOG_EXT_VERSION
 ARG MONGODB_EXT_VERSION
 ARG SOLR_EXT_VERSION
 
-COPY ./extensions /tmp/extensions
-COPY ./soft /tmp/extensions
-COPY ./sources.list/$SOURCE_LIST /etc/apt/sources.list
+COPY ./build/php-debian/sources.list/$SOURCE_LIST /etc/apt/sources.list
+COPY ./build/php-debian/extensions /tmp/extensions
+COPY ./src/php /tmp/extensions
 WORKDIR /tmp/extensions
 
 ENV EXTENSIONS=",${PHP_EXTENSIONS},"
@@ -31,7 +30,7 @@ ENV MC="-j$(nproc)"
 
 RUN export MC="-j$(nproc)" \
     && chmod +x "${MORE_EXTENSION_INSTALLER}" \
-    && sh "${MORE_EXTENSION_INSTALLER}" \
+    && sh "${MORE_EXTENSION_INSTALLER}" 2>&1 | tee -a /var/www/html/${MORE_EXTENSION_INSTALLER}_install.log \
     && rm -rf /tmp/extensions
 
 WORKDIR /var/www/html

@@ -1,14 +1,14 @@
-FROM alpine:latest
+FROM redis:latest
 
+LABEL maintainer="Mahmoud Zalt <mahmoud@zalt.me>"
 
-# 设置相应的时区
-RUN sed -i "s/dl-cdn.alpinelinux.org/${ALPINE_REPOSITORIES}/g" /etc/apk/repositories && \
-    apk add --no-cache tzdata && \
-    cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo "Asia/Shanghai" > /etc/timezone && \
-    apk del tzdata
+## For security settings uncomment, make the dir, copy conf, and also start with the conf, to use it
+#RUN mkdir -p /usr/local/etc/redis
+#COPY redis.conf /usr/local/etc/redis/redis.conf
 
-CMD [ "/bin/bash","echo 511 > /proc/sys/net/core/somaxconn && echo never > /sys/kernel/mm/transparent_hugepage/enabled" ]
+VOLUME /data
 
-RUN apk --update add redis && rm -rf /var/cache/apk/*
+EXPOSE 6379
 
-CMD [ "redis-server", "/etc/redis.conf" ]
+#CMD ["redis-server", "/usr/local/etc/redis/redis.conf"]
+CMD ["redis-server"]

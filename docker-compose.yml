@@ -12,7 +12,17 @@ services:
 ### nginx #################################################    
   nginx:
     << : *default-common
-    image: nginx:${NGINX_VERSION}
+    container_name: nginx
+    build:
+      context: ./
+      dockerfile: ./build/nginx/Dockerfile
+      args:
+        - ALPINE_REPOSITORIES=${ALPINE_REPOSITORIES}
+        - CHANGE_SOURCE=${CHANGE_SOURCE}
+        - NGINX_VERSION=${NGINX_VERSION}
+        - http_proxy
+        - https_proxy
+        - no_proxy
     ports:
       - "${NGINX_HTTP_HOST_PORT}:80"
       - "${NGINX_HTTPS_HOST_PORT}:443"
@@ -22,20 +32,73 @@ services:
       - ${NGINX_CONF_DIR}:/etc/nginx/conf.d/:rw
       - ${NGINX_CONF_FILE}:/etc/nginx/nginx.conf:ro
       - ${NGINX_LOG_DIR}:/var/log/nginx/:rw
-    restart: always
+      - ${NGINX_GITLAB_DATA_DIR}:/opt/gitlab
+      - ../:/var/www:cached
+      - ${NGINX_CONF_DIR}/certs:/etc/nginx/ssl
     environment:
-      TZ: ${GLOBAL_TIME_ZONE}
+      - SET_CONTAINER_TIMEZONE=true
+      - CONTAINER_TIMEZONE=${GLOBAL_TIME_ZONE}
     networks:
       - default
-    container_name: nginx
 
+  certbot:
+    << : *default-common
+    container_name: certbot
+    build:
+      context: ./build/certbot
+    volumes:
+      - ${NGINX_CONF_DIR}/certs/:/var/certs
+      - ./build/certbot/letsencrypt/:/var/www/letsencrypt
+    environment:
+      - CN="${LETSENCRYPT_DOMAIN}"
+      - EMAIL="${LETSENCRYPT_EMAIL}"
+    networks:
+      - default
+
+### php74 #################################################        
+  php74:
+    << : *default-common
+    container_name: php74
+    build:
+      context: ./
+      dockerfile: ./build/php/Dockerfile
+      args:
+        PHP_VERSION: ${PHP74_VERSION}
+        CHANGE_SOURCE: ${CHANGE_SOURCE}
+        ALPINE_REPOSITORIES: ${ALPINE_REPOSITORIES}
+        PHP_EXTENSIONS: ${PHP74_EXTENSIONS}
+        MORE_EXTENSION_INSTALLER: php74.sh
+        # XDEBUG_EXT_VERSION: ${XDEBUG_PHP7_EXT_VERSION}
+        SWOOLE_EXT_VERSION: ${SWOOLE_PHP7_EXT_VERSION}
+        GRPC_EXT_VERSION: ${GRPC_EXT_VERSION}
+        REDIS_EXT_VERSION: ${REDIS_EXT_VERSION}
+        LIBRDKAFKA_VERSION: ${LIBRDKAFKA_VERSION}
+        RDKAFKA_EXT_VERSION: ${RDKAFKA_EXT_VERSION}
+        ZOOKEEPER_VERSION: ${ZOOKEEPER_VERSION}
+        ZOOKEEPER_EXT_VERSION: ${ZOOKEEPER_EXT_VERSION}
+        PROTOBUF_VERSION: ${PROTOBUF_VERSION}
+        SEASLOG_EXT_VERSION: ${SEASLOG_EXT_VERSION}
+        MONGODB_EXT_VERSION: ${MONGODB_EXT_VERSION}
+    volumes:
+      - ${GLOBAL_WEB_PATH}:/var/www/html/:rw
+      - ${PHP74_PHP_CONF_FILE}:/usr/local/etc/php/php.ini:ro
+      - ${PHP74_FPM_CONF_FILE}:/usr/local/etc/php-fpm.d/www.conf:rw
+      - ${PHP74_LOG_DIR}:/var/log/php/:rw
+    cap_add:
+      - SYS_PTRACE
+    networks:
+      - default
 
 ### php73 #################################################        
   php73:
+    << : *default-common
+    container_name: php73
     build:
-      context: ./build/php/
+      context: ./
+      dockerfile: ./build/php/Dockerfile
       args:
         PHP_VERSION: ${PHP73_VERSION}
+        CHANGE_SOURCE: ${CHANGE_SOURCE}
         ALPINE_REPOSITORIES: ${ALPINE_REPOSITORIES}
         PHP_EXTENSIONS: ${PHP73_EXTENSIONS}
         MORE_EXTENSION_INSTALLER: php73.sh
@@ -48,7 +111,6 @@ services:
         ZOOKEEPER_VERSION: ${ZOOKEEPER_VERSION}
         ZOOKEEPER_EXT_VERSION: ${ZOOKEEPER_EXT_VERSION}
         PROTOBUF_VERSION: ${PROTOBUF_VERSION}
-        PHP_XHPROF_EXT: ${PHP_XHPROF_EXT}
         SEASLOG_EXT_VERSION: ${SEASLOG_EXT_VERSION}
         MONGODB_EXT_VERSION: ${MONGODB_EXT_VERSION}
     volumes:
@@ -61,18 +123,55 @@ services:
       - SYS_PTRACE
     networks:
       - default
-    container_name: php73
 
-
-### php72 #################################################      
+### php72 ################################################      
   php72:
+    << : *default-common
+    container_name: php72
     build:
-      context: ./build/php-debian/
+      context: ./
+      dockerfile: ./build/php/Dockerfile
+      args:
+        PHP_VERSION: ${PHP72_VERSION}
+        CHANGE_SOURCE: ${CHANGE_SOURCE}
+        ALPINE_REPOSITORIES: ${ALPINE_REPOSITORIES}
+        PHP_EXTENSIONS: ${PHP72_EXTENSIONS}
+        MORE_EXTENSION_INSTALLER: php72.sh
+        # XDEBUG_EXT_VERSION: ${XDEBUG_PHP7_EXT_VERSION}
+        SWOOLE_EXT_VERSION: ${SWOOLE_PHP7_EXT_VERSION}
+        GRPC_EXT_VERSION: ${GRPC_EXT_VERSION}
+        REDIS_EXT_VERSION: ${REDIS_EXT_VERSION}
+        LIBRDKAFKA_VERSION: ${LIBRDKAFKA_VERSION}
+        RDKAFKA_EXT_VERSION: ${RDKAFKA_EXT_VERSION}
+        ZOOKEEPER_VERSION: ${ZOOKEEPER_VERSION}
+        ZOOKEEPER_EXT_VERSION: ${ZOOKEEPER_EXT_VERSION}
+        PROTOBUF_VERSION: ${PROTOBUF_VERSION}
+        SEASLOG_EXT_VERSION: ${SEASLOG_EXT_VERSION}
+        MONGODB_EXT_VERSION: ${MONGODB_EXT_VERSION}
+        #SOLR_EXT_VERSION: ${SOLR_EXT_VERSION}
+    volumes:
+      - ${GLOBAL_WEB_PATH}:/var/www/html/:rw
+      - ${PHP72_PHP_CONF_FILE}:/usr/local/etc/php/php.ini:ro
+      - ${PHP72_FPM_CONF_FILE}:/usr/local/etc/php-fpm.d/www.conf:rw
+      - ${PHP72_LOG_DIR}:/var/log/php/:rw
+    cap_add:
+      - SYS_PTRACE
+    networks:
+      - default
+
+
+### php74-debian #############################################      
+  php74-debian:
+    << : *default-common
+    container_name: php74-debian
+    build:
+      context: ./
+      dockerfile: ./build/php-debian/Dockerfile
       args:
         SOURCE_LIST: buster
-        PHP_VERSION: ${PHP72_VERSION}
-        PHP_EXTENSIONS: ${PHP72_EXTENSIONS}
-        MORE_EXTENSION_INSTALLER: php72-debian.sh
+        PHP_VERSION: ${PHP74_VERSION}
+        PHP_EXTENSIONS: ${PHP74_EXTENSIONS}
+        MORE_EXTENSION_INSTALLER: php74-debian.sh
         LIBWEBP_VERSION: ${LIBWEBP_VERSION}
         # XDEBUG_EXT_VERSION: ${XDEBUG_PHP7_EXT_VERSION}
         SWOOLE_EXT_VERSION: ${SWOOLE_PHP7_EXT_VERSION}
@@ -83,28 +182,30 @@ services:
         ZOOKEEPER_VERSION: ${ZOOKEEPER_VERSION}
         ZOOKEEPER_EXT_VERSION: ${ZOOKEEPER_EXT_VERSION}
         PROTOBUF_VERSION: ${PROTOBUF_VERSION}
-        PHP_XHPROF_EXT: ${PHP_XHPROF_EXT}
         SEASLOG_EXT_VERSION: ${SEASLOG_EXT_VERSION}
         MONGODB_EXT_VERSION: ${MONGODB_EXT_VERSION}
         SOLR_EXT_VERSION: ${SOLR_EXT_VERSION}
     volumes:
       - ${GLOBAL_WEB_PATH}:/var/www/html/:rw
-      - ${PHP72_PHP_CONF_FILE}:/usr/local/etc/php/php.ini:ro
-      - ${PHP72_FPM_CONF_FILE}:/usr/local/etc/php-fpm.d/www.conf:rw
-      - ${PHP72_LOG_DIR}:/var/log/php/:rw
-    restart: always
+      - ${PHP74_PHP_CONF_FILE}:/usr/local/etc/php/php.ini:ro
+      - ${PHP74_FPM_CONF_FILE}:/usr/local/etc/php-fpm.d/www.conf:rw
+      - ${PHP74_LOG_DIR}:/var/log/php/:rw
     cap_add:
       - SYS_PTRACE
     networks:
       - default
-    container_name: php72
+
 
 ### php71 #################################################  
   php71:
+    << : *default-common
+    container_name: php71
     build:
-      context: ./build/php/
+      context: ./
+      dockerfile: ./build/php/Dockerfile
       args:
         PHP_VERSION: ${PHP71_VERSION}
+        CHANGE_SOURCE: ${CHANGE_SOURCE}
         ALPINE_REPOSITORIES: ${ALPINE_REPOSITORIES}
         PHP_EXTENSIONS: ${PHP71_EXTENSIONS}
         MORE_EXTENSION_INSTALLER: php71.sh
@@ -117,7 +218,6 @@ services:
         ZOOKEEPER_VERSION: ${ZOOKEEPER_VERSION}
         ZOOKEEPER_EXT_VERSION: ${ZOOKEEPER_EXT_VERSION}
         PROTOBUF_VERSION: ${PROTOBUF_VERSION}
-        PHP_XHPROF_EXT: ${PHP_XHPROF_EXT}
         SEASLOG_EXT_VERSION: ${SEASLOG_EXT_VERSION}
         MONGODB_EXT_VERSION: ${MONGODB_EXT_VERSION}
     volumes:
@@ -125,19 +225,22 @@ services:
       - ${PHP71_PHP_CONF_FILE}:/usr/local/etc/php/php.ini:ro
       - ${PHP71_FPM_CONF_FILE}:/usr/local/etc/php-fpm.d/www.conf:rw
       - ${PHP71_LOG_DIR}:/var/log/php/:rw
-    restart: always
     cap_add:
       - SYS_PTRACE
     networks:
       - default
-    container_name: php71
+
 
 ### php56 #################################################  
   php56:
+    << : *default-common
+    container_name: php56
     build:
-      context: ./build/php/
+      context: ./
+      dockerfile: ./build/php/Dockerfile
       args:
         PHP_VERSION: ${PHP56_VERSION}
+        CHANGE_SOURCE: ${CHANGE_SOURCE}
         ALPINE_REPOSITORIES: ${ALPINE_REPOSITORIES}
         PHP_EXTENSIONS: ${PHP56_EXTENSIONS}
         MORE_EXTENSION_INSTALLER: php56.sh
@@ -153,16 +256,16 @@ services:
       - ${PHP56_PHP_CONF_FILE}:/usr/local/etc/php/php.ini:ro
       - ${PHP56_FPM_CONF_FILE}:/usr/local/etc/php-fpm.d/www.conf:rw
       - ${PHP56_LOG_DIR}:/var/log/php
-    restart: always
     cap_add:
       - SYS_PTRACE
     networks:
       - default
-    container_name: php56
 
 
 ### mongo #################################################  
   # mongo:
+  #   << : *default-common
+  #   container_name: mongo
   #   image: mongo:4.1.13
   #   # build:
   #   #   context: ./build/mongo/
@@ -178,9 +281,9 @@ services:
   #     MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
   #   networks:
   #     - default
-  #   container_name: mongo
 
   # mongo-express:
+  #   << : *default-common
   #   image: mongo-express
   #   restart: unless-stopped
   #   ports:
@@ -197,125 +300,145 @@ services:
 
 ### mysql57 ################################################# 
   mysql57:
+    << : *default-common
+    container_name: mysql57
     image: mysql:${MYSQL_VERSION}
     ports:
       - "${MYSQL_HOST_PORT}:3306"
     volumes:
       - ${MYSQL_CONF_FILE}:/etc/mysql/conf.d/mysql.cnf:ro
       - ${MYSQL_DATA_DIR}:/var/lib/mysql/:rw
-    restart: always
+      - ${MYSQL57_LOG_DIR}:/var/log/mysql
     networks:
       - default
     environment:
       MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
-    container_name: mysql57
 
 
 ### redis ################################################# 
   redis:
+    << : *default-common
+    container_name: redis
     image: redis:${REDIS_VERSION}
     ports:
       - "${REDIS_HOST_PORT}:6379"
     environment:
       TZ: ${GLOBAL_TIME_ZONE}  
     volumes:
+      - ${DATA_PATH_HOST}/redis:/data
       - ${REDIS_CONF_FILE}:/etc/redis.conf:ro
       - ${REDIS_LOG_DIR}:/var/log/redis/:rw
-    restart: always
     entrypoint: ["redis-server", "/etc/redis.conf"]
     networks:
       - default
     sysctls:
       - net.core.somaxconn=1024
-      - net.ipv4.tcp_syncookies=0  
-    container_name: redis
-    
-  # redis:
-  #   << : *default-common
-  #   build:
-  #     context: ./build/redis/
-  #     args:
-  #       ALPINE_REPOSITORIES: ${ALPINE_REPOSITORIES}
-  #       # ALPINE_REPOSITORIES: mirrors.ustc.edu.cn
-  #   privileged: true
-  #   ports:
-  #     - "${REDIS_HOST_PORT}:6379"
-    # environment:
-    #   TZ: ${GLOBAL_TIME_ZONE}
-  #   networks:
-  #     - net-redis
-  #   volumes:
-  #     - ${REDIS_LOG_DIR}:/var/log/redis/:rw
-  #   command: [
-  #     "redis-server",
-  #     "/etc/redis.conf",
-  #     "--daemonize no",
-  #     "--logfile /var/log/redis/redis.log",
-  #     "--bind 0.0.0.0",
-  #     "--appendonly yes",
-  #     "--aof-use-rdb-preamble yes"
-  #     ]
-    # sysctls:
-    #   - net.core.somaxconn=1024
-    #   - net.ipv4.tcp_syncookies=0
-  #   container_name: redis
 
 
-### gogs #################################################   
-  # gogs:
-  #   << : *default-common
-  #   image: gogs/gogs
-  #   restart: always
-  #   privileged: true
-  #   ports:
-  #     - ${GOGS_SSH_PORT}:22
-  #     - ${GOGS_HOST_PORT}:3000
-  #   environment:
-  #     - RUN_CROND=true
-  #   volumes:
-  #     - ${GLOBAL_GOGS_PATH}:/data
-  #   links:
-  #     - mysql57:mysql57
-  #   depends_on:
-  #      - mysql57
-  #   networks:
-  #     - net-gogs
-  #   container_name: gogs
+### PostgreSQL ###########################################
+  postgres:
+    << : *default-common
+    container_name: postgres
+    build: ./build/postgres
+    volumes:
+      - ${DATA_PATH_HOST}/postgres:/var/lib/postgresql/data
+      - ${POSTGRES_ENTRYPOINT_INITDB}:/docker-entrypoint-initdb.d
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - GITLAB_POSTGRES_INIT=${GITLAB_POSTGRES_INIT}
+      - GITLAB_POSTGRES_USER=${GITLAB_POSTGRES_USER}
+      - GITLAB_POSTGRES_PASSWORD=${GITLAB_POSTGRES_PASSWORD}
+      - GITLAB_POSTGRES_DB=${GITLAB_POSTGRES_DB}
+      - POSTGRES_CONFLUENCE_INIT=${CONFLUENCE_POSTGRES_INIT}
+      - POSTGRES_CONFLUENCE_DB=${CONFLUENCE_POSTGRES_DB}
+      - POSTGRES_CONFLUENCE_USER=${CONFLUENCE_POSTGRES_USER}
+      - POSTGRES_CONFLUENCE_PASSWORD=${CONFLUENCE_POSTGRES_PASSWORD}
+    networks:
+      - default
 
+### CONFLUENCE ################################################
+  confluence:
+    << : *default-common
+    container_name: confluence
+    build:
+      context: ./
+      dockerfile: ./build/confluence/Dockerfile
+      args:
+        CONFLUENCE_VERSION: ${CONFLUENCE_VERSION}
+        CONFULENCE_RUN_USER: ${CONFULENCE_RUN_USER}
+        CONFULENCE_RUN_GROUP: ${CONFULENCE_RUN_GROUP}
+        ALPINE_REPOSITORIES: ${ALPINE_REPOSITORIES}
+    ports:
+      - "${CONFLUENCE_HOST_HTTP_PORT}:8090"
+    networks:
+      - default
+    depends_on:
+      - nginx
+      - postgres
+    volumes:
+      - ${DATA_PATH_HOST}/confluence/:/var/atlassian/application-data
 
-### phpredisadmin #################################################   
-  # phpredisadmin:
-  #   image: erikdubbelboer/phpredisadmin:latest
-  #   ports:
-  #     - "8081:80"
-  #   networks:
-  #     - net-redis
-  #   environment:
-  #     - REDIS_1_HOST=redis
-  #     - REDIS_1_PORT=${REDIS_PORT}
-  #   container_name: phpredisadmin
+### Gitlab ################################################
+  gitlab:
+    << : *default-common
+    container_name: gitlab
+    build:
+      context: ./build/gitlab
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url '${GITLAB_DOMAIN_NAME}'
+        gitlab_rails['trusted_proxies'] = ['caddy','nginx','apache2']
+        gitlab_rails['lfs_enabled'] = true
+        redis['enable'] = false
+        gitlab_rails['redis_host'] = 'redis'
+        gitlab_rails['redis_database'] = 8
+        nginx['listen_https'] = false
+        nginx['listen_port'] = 80
+        nginx['gzip_enabled'] = true
+        nginx['custom_gitlab_server_config'] = "set_real_ip_from 172.0.0.0/8;\nreal_ip_header X-Real-IP;\nreal_ip_recursive on;"
+        postgresql['enable'] = false
+        gitlab_rails['db_host'] = '${GITLAB_POSTGRES_HOST}'
+        gitlab_rails['db_username'] = '${GITLAB_POSTGRES_USER}'
+        gitlab_rails['db_password'] = '${GITLAB_POSTGRES_PASSWORD}'
+        gitlab_rails['db_database'] = '${GITLAB_POSTGRES_DB}'
+        gitlab_rails['initial_root_password'] = '${GITLAB_ROOT_PASSWORD}'
+        gitlab_rails['gitlab_shell_ssh_port'] = ${GITLAB_HOST_SSH_PORT}
+    volumes:
+      - ${DATA_PATH_HOST}/gitlab/config:/etc/gitlab
+      - ${DATA_PATH_HOST}/gitlab/data:/var/opt/gitlab
+      - ${GITLAB_HOST_LOG_PATH}:/var/log/gitlab
+    ports:
+      - "${GITLAB_HOST_HTTP_PORT}:80"
+      - "${GITLAB_HOST_HTTPS_PORT}:443"
+      - "${GITLAB_HOST_SSH_PORT}:22"
+    networks:
+      - default
+    depends_on:
+      - redis
+      - postgres
+      - nginx
 
-
-### postgresql #################################################   
-  # postgresql:
-  #   << : *default-common
-  #   image: postgres:alpine
-  #   environment:
-  #     POSTGRES_DB: ${POSTGRES_DB}
-  #     POSTGRES_USER: ${POSTGRES_USER}
-  #     POSTGRES_PASSWORD: ${POSTGRES_ROOT_PASSWORD}
-  #     POSTGRES_ENCODING: ${POSTGRES_CHARSET}
-  #     PGDATA: ${GLOBAL_POSTGRES_PATH}
-  #   ports:
-  #     - "${POSTGRES_PORT}:5432"
-  #   volumes:
-  #     - "${GLOBAL_POSTGRES_PATH}:/data/postgresql_data/"
-  #   restart: unless-stopped
-  #   privileged: true
-  #   networks:
-  #     - net-postgre
-  #   container_name: postgresql
-
+### Jenkins ################################################
+  jenkins:
+    << : *default-common
+    container_name: jenkins
+    build:
+      context: ./
+      dockerfile: ./build/jenkins/Dockerfile
+    environment:
+      JAVA_OPTS: "-Djava.awt.headless=true"
+    ports:
+      - "${JENKINS_HOST_SLAVE_AGENT_PORT}:50000"
+      - "${JENKINS_HOST_HTTP_PORT}:8080"
+    volumes:
+      - ${JENKINS_HOME}:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - nginx
 
 ### python37 #################################################   
   # python37:
@@ -323,6 +446,7 @@ services:
   #   build:
   #     context: ./build/python/
   #     args:
+  #       - CHANGE_SOURCE=${CHANGE_SOURCE}
   #       PYTHON_VERSION: ${PYTHON_VERSION}
   #       ALPINE_REPOSITORIES: ${ALPINE_REPOSITORIES}
   #       PYTHON_WEB_PATH: ${PYTHON_WEB_PATH}
@@ -330,7 +454,6 @@ services:
   #   command: python3 ${DJANGO_PROJECT}/manage.py runserver 0.0.0.0:8000
   #   volumes:
   #     - ${PYTHON_WEB_PATH}:/var/www/:rw
-  #   restart: always
   #   privileged: true
   #   ports:
   #     - "${DJANGO_PORT}:8000"
@@ -344,11 +467,3 @@ services:
 
 networks:
   default:
-  # net-mysql:
-  # net-php73:
-  # net-php72:
-  # net-php56:
-  # net-redis:
-  # net-gogs:
-  # net-postgre:
-  # net-python:
