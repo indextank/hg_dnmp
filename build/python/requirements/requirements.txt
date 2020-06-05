@@ -4,33 +4,31 @@
 #
 #    pip-compile --output-file requirements.txt requirements.in
 #
-appnope==0.1.0            # via ipython
 backcall==0.1.0           # via ipython
 decorator==4.3.0          # via ipython, traitlets
 django-braces==1.13.0     # via django-model-controller
 django-crispy-forms==1.7.2  # via django-model-controller
-django-environ==0.4.5
-django-model-controller==0.2.2
-django-test-without-migrations==0.6
-django==2.1
-djangorestframework==3.8.2
-ipdb==0.11
+django-environ==0.4.5     # via -r requirements.in
+django-model-controller==0.2.2  # via -r requirements.in
+django-test-without-migrations==0.6  # via -r requirements.in
+django==2.2.13            # via -r requirements.in, django-model-controller, model-mommy
+djangorestframework==3.8.2  # via -r requirements.in
+ipdb==0.11                # via -r requirements.in
 ipython-genutils==0.2.0   # via traitlets
 ipython==6.5.0            # via ipdb
 jedi==0.12.1              # via ipython
-model-mommy==1.6.0
+model-mommy==1.6.0        # via -r requirements.in
 parso==0.3.1              # via jedi
 pexpect==4.6.0            # via ipython
 pickleshare==0.7.4        # via ipython
-pillow==5.2.0
+pillow==5.2.0             # via -r requirements.in
 prompt-toolkit==1.0.15    # via ipython
-psycopg2-binary==2.7.5
+psycopg2-binary==2.7.5    # via -r requirements.in
 ptyprocess==0.6.0         # via pexpect
 pygments==2.2.0           # via ipython
 pytz==2018.7              # via django
 simplegeneric==0.8.1      # via ipython
 six==1.11.0               # via model-mommy, prompt-toolkit, traitlets
+sqlparse==0.3.1           # via django
 traitlets==4.3.2          # via ipython
 wcwidth==0.1.7            # via prompt-toolkit
-python-form==0.2.2
-PyMySQL==0.9.2
